@@ -15,8 +15,10 @@ import vertexShader from './vertex.glsl';
 const gui = new GUI();
 const config = {
   curvature: 0.5,
+  lazy: 0.6,
 };
 gui.add(config, 'curvature', 0, 1, 0.01);
+gui.add(config, 'lazy', 0, 1, 0.01);
 
 const resolution = new THREE.Vector2(
   sizes.width * sizes.pixelRatio,
@@ -239,12 +241,13 @@ export class Sketch {
 
   public update() {
     const scale = Math.max(sizes.width, sizes.height) / 1280;
+    const lazyBase = 850 + (1 - config.lazy) * 1000;
     this.buttons.forEach((button, i) => {
       const x = i % col;
       const y = ~~(i / col);
       const distance = button.mesh.position.distanceTo(origin3);
       const p = beta(
-        clamp(Math.pow(1 - distance / 1200, 2), 0.07, 1),
+        clamp(Math.pow(1 - distance / lazyBase, 2), 0.07, 1),
         clock.delta,
       );
       button.x = lerp(
