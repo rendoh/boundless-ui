@@ -1,3 +1,4 @@
+import GUI from 'lil-gui';
 import * as THREE from 'three';
 import { clamp, lerp } from 'three/src/math/MathUtils';
 
@@ -5,10 +6,17 @@ import backdropFragmentShader from './backdropFragment.glsl';
 import backdropVertexShader from './backdropVertex.glsl';
 import { camera } from './core/camera';
 import { clock } from './core/clock';
+import { renderer } from './core/renderer';
 import { sizes } from './core/sizes';
 import fragmentShader from './fragment.glsl';
 import { icons } from './icons';
 import vertexShader from './vertex.glsl';
+
+const gui = new GUI();
+const config = {
+  curvature: 0.5,
+};
+gui.add(config, 'curvature', 0, 1, 0.01);
 
 const resolution = new THREE.Vector2(
   sizes.width * sizes.pixelRatio,
@@ -59,6 +67,7 @@ class Button {
         uPixelRatio: { value: sizes.pixelRatio },
         uTexture: { value: this.texture },
         uHovered: { value: 0 },
+        uCurvature: { value: config.curvature },
       },
     });
     this.mesh = new THREE.Mesh(geometry, material);
@@ -73,6 +82,7 @@ class Button {
     this.mesh.material.uniforms.uTime.value = clock.elapsed / 1000;
     this.mesh.material.uniforms.uResolution.value = resolution;
     this.mesh.material.uniforms.uPixelRatio.value = sizes.pixelRatio;
+    this.mesh.material.uniforms.uCurvature.value = config.curvature;
     this.mesh.material.uniforms.uHovered.value = lerp(
       this.mesh.material.uniforms.uHovered.value,
       this.isHovered ? 1 : 0,
@@ -165,7 +175,7 @@ export class Sketch {
     this.initDnD();
     this.resize();
 
-    window.addEventListener('mousemove', (e) => {
+    renderer.renderer.domElement.addEventListener('mousemove', (e) => {
       this.mouse.x = (e.clientX / sizes.width) * 2 - 1;
       this.mouse.y = -(e.clientY / sizes.height) * 2 + 1;
     });
@@ -200,17 +210,16 @@ export class Sketch {
       this.velocity.copy(tmpV);
       document.body.style.removeProperty('cursor');
     };
-
-    window.addEventListener('mousedown', handleStart);
-    window.addEventListener('touchstart', handleStart);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', handleMove, {
+    renderer.renderer.domElement.addEventListener('mousedown', handleStart);
+    renderer.renderer.domElement.addEventListener('touchstart', handleStart);
+    renderer.renderer.domElement.addEventListener('mousemove', handleMove);
+    renderer.renderer.domElement.addEventListener('touchmove', handleMove, {
       passive: false,
     });
-    window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchend', handleEnd);
+    renderer.renderer.domElement.addEventListener('mouseup', handleEnd);
+    renderer.renderer.domElement.addEventListener('touchend', handleEnd);
 
-    window.addEventListener(
+    renderer.renderer.domElement.addEventListener(
       'wheel',
       (e) => {
         e.preventDefault();
@@ -256,7 +265,7 @@ export class Sketch {
       this.x += this.velocity.x;
       this.y -= this.velocity.y;
     }
-    this.velocity.lerp(origin2, beta(0.08, clock.delta));
+    this.velocity.lerp(origin2, beta(0.05, clock.delta));
 
     this.raycaster.setFromCamera(this.mouse, camera.camera);
 
